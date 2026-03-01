@@ -1,0 +1,10 @@
+﻿{
+  "plugin_id": "chronicle.plugin.thetvdb",
+  "name": "TheTVDB",
+  "version": "1.0.0",
+  "author": "thegoddamnbeckster",
+  "description": "Chronicle metadata plugin for TheTVDB.",
+  "entry_type": "Chronicle.Plugin.TheTVDB.TheTVDBPlugin",
+  "min_chronicle_version": "0.6.0",
+  "supported_media_types": ["tv", "tv_season", "tv_episode"]
+}
