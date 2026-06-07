@@ -6,7 +6,7 @@
   "description": "Metadata for TV series, seasons, and episodes from TheTVDB — the community standard used by Sonarr, Plex, Kodi, Trakt, and SIMKL.",
   "min_chronicle_version": "0.6.0",
   "entry_type":  "Chronicle.Plugin.TheTVDB.TheTvdbMetadataProvider",
-  "iconUrl":     "https://thetvdb.com/favicon.ico",
+  "iconUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIuSURBVHhe7ZlhccMwDIUHYARGoARKYAiKoAzKYBRGYRhKoiwGRt69u7qnvcqJY7u1eqfvZyIl0bPkyPbbWxAEQRAEQRAENaSU9mkAInIWkYtx/YPfWaLXv4nBAhyN60d+pwUCNXwvbDecwQI0B1EQ78B2wxkpAJ7XmsaWX0rpne2eioic+IvYhimM5GIZFDLnh+2eTqMAVjCLZWCJllL6ZLun0yIAwOix31IZWOnPNlPoEODAfqUyKGTMN9tNoVUATF7sVyoDK/1FZMd2U2gVANSWAae/iPyyzTQ6BVgtg0L6n7TNVHoEAOzLZVBI/7ssmUavAJjM2F8HaKS/OU9Mo1cA/MvZP5dBIf0f3/puoVcAwP55lK1nT299Gesj2WaNUhlgtqdr81tfZoQA1mLLEsVF68uMEADwaFuwjwsGCvDFz9G4aX2ZgQLs+DkaN60vM0oAUCoDV60vM1gAswxctb7MYAHuGh/gqvUNgiAIgiDIWI2Q5rrzu9/qB+Drdg2QqQkE8Gqu1g+4FmFLIHpDY4ufy52gDAXyL9UxcvrwQ6/qlvwAb5byfTesBQL0Mjenc6XfORvwPTdUBnI73FBb3ot+5ONzNwisBQL0pmde22+cA/wuhx8twHWTxNdZgObRAgB3x2GaGgEa5wD8QW7ngu6OxDJrgQA9m2/5C1iZ446lQK7HW019gOH7EgKs0dQJArftcG0gmM1b/MAr9QF3dK4GL24nvyAIgiB4Tf4A7zKb1dPc3rkAAAAASUVORK5CYII=",
   "brandColorLight": "#6AB7E2",
   "brandColorDark":  "#3C8DBE",
   "fixMatchHint": "Enter a TheTVDB series ID (76290), a series URL (https://thetvdb.com/series/breaking-bad), or for a specific episode use episode:{episodeId} (episode:308662). Series slugs in URLs are resolved automatically.",
