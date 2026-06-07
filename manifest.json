@@ -1,10 +1,54 @@
-﻿{
-  "plugin_id": "chronicle.plugin.thetvdb",
-  "name": "TheTVDB",
-  "version": "1.0.0",
-  "author": "thegoddamnbeckster",
-  "description": "Chronicle metadata plugin for TheTVDB.",
-  "entry_type": "Chronicle.Plugin.TheTVDB.TheTVDBPlugin",
+{
+  "plugin_id":   "chronicle.plugin.thetvdb",
+  "name":        "TheTVDB",
+  "version":     "1.0.0",
+  "author":      "Chronicle Contributors",
+  "description": "Metadata for TV series, seasons, and episodes from TheTVDB — the community standard used by Sonarr, Plex, Kodi, Trakt, and SIMKL.",
   "min_chronicle_version": "0.6.0",
-  "supported_media_types": ["tv", "tv_season", "tv_episode"]
+  "entry_type":  "Chronicle.Plugin.TheTVDB.TheTvdbMetadataProvider",
+  "iconUrl":     "https://thetvdb.com/favicon.ico",
+  "brandColorLight": "#6AB7E2",
+  "brandColorDark":  "#3C8DBE",
+  "fixMatchHint": "Enter a TheTVDB series ID (76290), a series URL (https://thetvdb.com/series/breaking-bad), or for a specific episode use episode:{episodeId} (episode:308662). Series slugs in URLs are resolved automatically.",
+  "background_tasks": [
+    {
+      "task_id":         "fetch-missing-metadata",
+      "display_name":    "Fetch Missing TV Metadata",
+      "description":     "Fetches TheTVDB metadata for TV items that have a TVDB ID stored (from Trakt or SIMKL sync) but have not yet been enriched by TheTVDB.",
+      "default_cron":    "0 4 * * *",
+      "default_enabled": true
+    },
+    {
+      "task_id":         "resync-all-metadata",
+      "display_name":    "Re-sync All TV Metadata",
+      "description":     "Re-fetches all TheTVDB metadata to pick up community edits, new episodes, and artwork changes.",
+      "default_cron":    "0 2 * * 0",
+      "default_enabled": false
+    }
+  ],
+  "settings": [
+    {
+      "key":         "api_key",
+      "label":       "TheTVDB API Key",
+      "type":        "password",
+      "required":    true,
+      "description": "Your TheTVDB API key. Get one free at https://thetvdb.com/dashboard."
+    },
+    {
+      "key":          "language",
+      "label":        "Preferred Language",
+      "type":         "text",
+      "required":     false,
+      "default":      "eng",
+      "description":  "ISO 639-2 three-letter language code (e.g. eng, fra, deu, jpn). Note: TVDB uses 3-letter codes unlike TMDB's 2-letter codes."
+    },
+    {
+      "key":          "fallback_language",
+      "label":        "Fallback Language",
+      "type":         "text",
+      "required":     false,
+      "default":      "eng",
+      "description":  "Language used when no translation exists in the preferred language."
+    }
+  ]
 }
