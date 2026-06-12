@@ -145,7 +145,11 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
         settings.TryGetValue(KeyFallbackLanguage, out var fallback);
 
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new InvalidOperationException("TheTVDB plugin requires 'api_key' to be configured.");
+        {
+            _logger.LogWarning("TheTVDB plugin is not configured: 'api_key' is missing. Searches will be unavailable until the key is set in Settings → Plugins.");
+            _client = null;
+            return;
+        }
 
         _ownedHttp?.Dispose();
         var http = new HttpClient { DefaultRequestHeaders = { { "User-Agent", "Chronicle/1.0" } } };
