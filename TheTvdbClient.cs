@@ -16,6 +16,15 @@ internal sealed class TheTvdbClient : IDisposable
     private const int    TokenLifetimeDays = 30;
     private const int    RefreshBeforeDays = 5;
 
+    /// <summary>
+    /// TheTVDB's real rate-limit model is tier-dependent (free vs. supporter/business account)
+    /// and can't be confirmed from this codebase alone — there was previously no way to tell
+    /// which regime a given API key falls under, so this is deliberately the safe-regardless-
+    /// of-tier fix: a short bounded backoff on 429, not a SIMKL-style daily-quota cutoff (which
+    /// would need a confirmed daily-cap number this plugin has no way to know).
+    /// </summary>
+    private static readonly TimeSpan MaxRetryAfterWait = TimeSpan.FromSeconds(30);
+
     private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
     private readonly HttpClient         _http;
@@ -76,6 +85,22 @@ internal sealed class TheTvdbClient : IDisposable
             using var req2 = new HttpRequestMessage(HttpMethod.Get, url);
             req2.Headers.Authorization = new("Bearer", token);
             resp = await _http.SendAsync(req2, ct).ConfigureAwait(false);
+        }
+
+        // On 429, honor Retry-After (capped) and retry once more — previously unhandled here,
+        // a rate-limited response just fell through to EnsureSuccessStatusCode() and threw.
+        // See MaxRetryAfterWait's own doc for why this is a short bounded backoff, not a
+        // SIMKL-style multi-hour cutoff.
+        if (resp.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            var retryAfter = resp.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(5);
+            var wait = retryAfter > MaxRetryAfterWait ? MaxRetryAfterWait : retryAfter;
+            _logger.LogWarning("TheTVDB: rate-limited (429); waiting {Seconds}s before one retry", wait.TotalSeconds);
+
+            await Task.Delay(wait, ct).ConfigureAwait(false);
+            using var req3 = new HttpRequestMessage(HttpMethod.Get, url);
+            req3.Headers.Authorization = new("Bearer", token);
+            resp = await _http.SendAsync(req3, ct).ConfigureAwait(false);
         }
 
         return resp;
