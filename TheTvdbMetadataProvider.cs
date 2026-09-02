@@ -74,11 +74,11 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             HierarchyLabels = ["Show", "Season", "Episode"],
             DefaultPriority = 15,
             SupportedFields = ["title", "overview", "year", "poster_url", "backdrop_url",
-                               "banner_url", "genres", "cast", "directors", "rating", "tags"],
+                               "banner_url", "genres", "cast", "crew", "rating", "tags"],
             LevelFields = new Dictionary<int, List<string>>
             {
                 [1] = ["title", "overview", "year", "poster_url", "banner_url"],
-                [2] = ["title", "overview", "year", "runtime_minutes", "rating", "directors", "cast"],
+                [2] = ["title", "overview", "year", "runtime_minutes", "rating", "crew", "cast"],
             },
         },
         new MediaTypeSupport
@@ -89,11 +89,11 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             HierarchyLabels = ["Show", "Season", "Episode"],
             DefaultPriority = 15,
             SupportedFields = ["title", "overview", "year", "poster_url", "backdrop_url",
-                               "banner_url", "genres", "cast", "directors", "rating", "tags"],
+                               "banner_url", "genres", "cast", "crew", "rating", "tags"],
             LevelFields = new Dictionary<int, List<string>>
             {
                 [1] = ["title", "overview", "year", "poster_url", "banner_url"],
-                [2] = ["title", "overview", "year", "runtime_minutes", "rating", "directors", "cast"],
+                [2] = ["title", "overview", "year", "runtime_minutes", "rating", "crew", "cast"],
             },
         },
     ];
@@ -407,8 +407,7 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
         var extra = new Dictionary<string, object?>();
         if (s.LatestNetwork?.Name is not null)  extra["network"]         = s.LatestNetwork.Name;
         if (s.Status?.Name is not null)          extra["status"]          = s.Status.Name;
-        if (s.OriginalCountry is not null)       extra["originalCountry"] = s.OriginalCountry;
-        if (s.AverageRuntime.HasValue)           extra["averageRuntime"]  = s.AverageRuntime;
+        if (s.OriginalCountry is not null)       extra["country"]         = s.OriginalCountry;
 
         var imdb   = s.RemoteIds?.FirstOrDefault(r => r.SourceName == "IMDB")?.Id;
         var zap2it = s.RemoteIds?.FirstOrDefault(r => r.SourceName == "Zap2It")?.Id;
@@ -426,9 +425,10 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             BackdropUrl  = BestArtwork(s.Artworks, TvdbArtworkType.Background),
             BannerUrl    = BestArtwork(s.Artworks, TvdbArtworkType.Banner),
             Genres       = s.Genres?.Select(g => g.Name).ToList() ?? [],
-            Cast         = ExtractPeople(s.Characters, 3),   // 3 = Actor
-            Directors    = [],
+            Cast         = ExtractCast(s.Characters, 3),   // 3 = Actor
+            Crew         = ExtractCrew(s.Characters),
             Rating       = s.Score,
+            RuntimeMinutes = s.AverageRuntime,
             ExtendedData = extra.Count > 0
                 ? JsonSerializer.SerializeToElement(extra)
                 : null,
@@ -467,8 +467,8 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             Year           = ParseYear(e.Aired),
             RuntimeMinutes = e.Runtime,
             Rating         = e.Score,
-            Cast           = ExtractPeople(e.Characters, 3),
-            Directors      = ExtractPeople(e.Characters, 4),   // 4 = Director
+            Cast           = ExtractCast(e.Characters, 3),
+            Crew           = ExtractCrew(e.Characters),
             PosterUrl      = EnsureHttps(e.Image),
         };
     }
@@ -614,11 +614,24 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
         return id;
     }
 
-    private static List<string> ExtractPeople(TvdbCharacter[]? chars, int type)
+    private static List<CastMember> ExtractCast(TvdbCharacter[]? chars, int type)
         => chars?
             .Where(c => c.Type == type && c.PersonName is not null)
-            .Select(c => c.PersonName!)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .GroupBy(c => c.PersonName!, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new CastMember(g.Key, g.First().Name))
+            .ToList()
+           ?? [];
+
+    // TVDB character "type" codes for non-actor credits it also surfaces via the same
+    // characters array. Only Director(4) and Writer(7) are documented/observed here;
+    // any other type code is left uncaptured rather than guessed at.
+    private static readonly Dictionary<int, string> _crewJobByType = new() { [4] = "Director", [7] = "Writer" };
+
+    private static List<CrewMember> ExtractCrew(TvdbCharacter[]? chars)
+        => chars?
+            .Where(c => _crewJobByType.ContainsKey(c.Type) && c.PersonName is not null)
+            .GroupBy(c => (c.PersonName!, c.Type))
+            .Select(g => new CrewMember(g.Key.Item1, _crewJobByType[g.Key.Type]))
             .ToList()
            ?? [];
 
