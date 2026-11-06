@@ -33,7 +33,7 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
 
     public string PluginId => "chronicle.plugin.thetvdb";
     public string Name     => "TheTVDB";
-    public string Version  => "1.0.0";
+    public string Version  => System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(TheTvdbMetadataProvider).Assembly)?.InformationalVersion.Split('+')[0] ?? "1.0.0";
     public string Author   => "Chronicle Contributors";
 
     // ── Settings keys ─────────────────────────────────────────────────────────
