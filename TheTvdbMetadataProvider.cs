@@ -152,7 +152,7 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
         }
 
         _ownedHttp?.Dispose();
-        var http = new HttpClient { DefaultRequestHeaders = { { "User-Agent", "Chronicle/1.0" } } };
+        var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20), DefaultRequestHeaders = { { "User-Agent", $"Chronicle-TheTVDB/{Version}" } } };
         _ownedHttp        = http;
         _client           = new TheTvdbClient(http, apiKey, _logger);
         _language         = string.IsNullOrWhiteSpace(lang)     ? "eng" : lang.Trim();

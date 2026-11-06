@@ -1,4 +1,5 @@
 using System.Net;
+using Chronicle.Plugins;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -58,6 +59,9 @@ internal sealed class TheTvdbClient : IDisposable
             _logger.LogDebug("TheTVDB: acquiring new JWT token");
             var resp = await _http.PostAsJsonAsync($"{BaseUrl}/login",
                 new { apikey = _apiKey }, ct).ConfigureAwait(false);
+            if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                throw new PluginAuthException("chronicle.plugin.thetvdb",
+                    "TheTVDB rejected the API key. Check the key in the plugin settings (a v4 project key, not a v2 key).");
             resp.EnsureSuccessStatusCode();
 
             var body = await resp.Content.ReadFromJsonAsync<TvdbLoginResponse>(_json, ct)
@@ -85,6 +89,9 @@ internal sealed class TheTvdbClient : IDisposable
             using var req2 = new HttpRequestMessage(HttpMethod.Get, url);
             req2.Headers.Authorization = new("Bearer", token);
             resp = await _http.SendAsync(req2, ct).ConfigureAwait(false);
+            if (resp.StatusCode == HttpStatusCode.Unauthorized)
+                throw new PluginAuthException("chronicle.plugin.thetvdb",
+                    "TheTVDB rejected a freshly issued token. Check the API key in the plugin settings.");
         }
 
         // On 429, honor Retry-After (capped) and retry once more — previously unhandled here,
