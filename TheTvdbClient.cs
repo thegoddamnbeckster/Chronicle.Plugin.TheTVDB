@@ -108,6 +108,13 @@ internal sealed class TheTvdbClient : IDisposable
             using var req3 = new HttpRequestMessage(HttpMethod.Get, url);
             req3.Headers.Authorization = new("Bearer", token);
             resp = await _http.SendAsync(req3, ct).ConfigureAwait(false);
+            if (resp.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                // Still limited after the one short wait: a pause, with what TheTVDB asked for, so the queue holds the item and carries on.
+                resp.Dispose();
+                throw new HttpRequestException("TheTVDB is rate limiting requests", null, HttpStatusCode.TooManyRequests)
+                    { Data = { ["RetryAfter"] = retryAfter } };
+            }
         }
 
         return resp;

@@ -39,6 +39,23 @@ public class ClientTests
     }
 
     [Fact]
+    public async Task A_rate_limit_that_does_not_clear_after_the_one_wait_is_a_pause_that_says_how_long_TheTVDB_asked()
+    {
+        Func<HttpRequestMessage, HttpResponseMessage> limited = _ =>
+        {
+            var r = Reply.Status(HttpStatusCode.TooManyRequests);
+            r.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromMilliseconds(1));
+            return r;
+        };
+        var h = new StubHandler(_ => Reply.Json(Login), limited, limited);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => Client(h).SearchSeriesAsync("x", default));
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, ex.StatusCode);
+        Assert.Equal(TimeSpan.FromMilliseconds(1), ex.Data["RetryAfter"]);
+    }
+
+    [Fact]
     public async Task A_search_answer_is_read_and_sent_with_the_bearer_token()
     {
         var h = new StubHandler(_ => Reply.Json(Login),
