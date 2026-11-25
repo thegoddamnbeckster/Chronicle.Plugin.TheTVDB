@@ -74,11 +74,11 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             HierarchyLabels = ["Show", "Season", "Episode"],
             DefaultPriority = 15,
             SupportedFields = ["title", "overview", "year", "poster_url", "backdrop_url",
-                               "banner_url", "genres", "cast", "crew", "rating", "tags"],
+                               "banner_url", "genres", "cast", "crew", "tags"],
             LevelFields = new Dictionary<int, List<string>>
             {
                 [1] = ["title", "overview", "year", "poster_url", "banner_url"],
-                [2] = ["title", "overview", "year", "runtime_minutes", "rating", "crew", "cast"],
+                [2] = ["title", "overview", "year", "runtime_minutes", "crew", "cast"],
             },
         },
         new MediaTypeSupport
@@ -89,11 +89,11 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             HierarchyLabels = ["Show", "Season", "Episode"],
             DefaultPriority = 15,
             SupportedFields = ["title", "overview", "year", "poster_url", "backdrop_url",
-                               "banner_url", "genres", "cast", "crew", "rating", "tags"],
+                               "banner_url", "genres", "cast", "crew", "tags"],
             LevelFields = new Dictionary<int, List<string>>
             {
                 [1] = ["title", "overview", "year", "poster_url", "banner_url"],
-                [2] = ["title", "overview", "year", "runtime_minutes", "rating", "crew", "cast"],
+                [2] = ["title", "overview", "year", "runtime_minutes", "crew", "cast"],
             },
         },
     ];
@@ -413,6 +413,9 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
         var zap2it = s.RemoteIds?.FirstOrDefault(r => r.SourceName == "Zap2It")?.Id;
         if (imdb   is not null) extra["imdb"]   = imdb;
         if (zap2it is not null) extra["zap2it"] = zap2it;
+        // TheTVDB's "score" is a popularity number (it grows with views and favourites), not a rating, so it is kept under its own name and
+        // never offered as the item's rating.
+        if (s.Score is { } popularity) extra["popularity"] = popularity;
 
         return new MediaMetadata
         {
@@ -427,7 +430,6 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             Genres       = s.Genres?.Select(g => g.Name).ToList() ?? [],
             Cast         = ExtractCast(s.Characters, 3),   // 3 = Actor
             Crew         = ExtractCrew(s.Characters),
-            Rating       = s.Score,
             RuntimeMinutes = s.AverageRuntime,
             ExtendedData = extra.Count > 0
                 ? JsonSerializer.SerializeToElement(extra)
@@ -466,7 +468,9 @@ public sealed class TheTvdbMetadataProvider : IMetadataProvider, IDisposable
             Overview       = translation?.Overview ?? e.Overview,
             Year           = ParseYear(e.Aired),
             RuntimeMinutes = e.Runtime,
-            Rating         = e.Score,
+            ExtendedData   = e.Score is { } popularity
+                ? JsonSerializer.SerializeToElement(new Dictionary<string, object?> { ["popularity"] = popularity })
+                : null,
             Cast           = ExtractCast(e.Characters, 3),
             Crew           = ExtractCrew(e.Characters),
             PosterUrl      = EnsureHttps(e.Image),

@@ -40,4 +40,22 @@ public class ProviderTests
                 Assert.All(fields, f => Assert.Contains(f, HostKnows));
         }
     }
+
+    [Fact]
+    public async Task The_popularity_number_is_kept_as_popularity_and_never_offered_as_a_rating()
+    {
+        const string login = "{\"status\":\"success\",\"data\":{\"token\":\"T\"}}";
+        const string series = "{\"status\":\"success\",\"data\":{\"id\":1,\"name\":\"Show\",\"score\":2914575,\"firstAired\":\"2010-01-01\"}}";
+        var h = new StubHandler(_ => Reply.Json(login), _ => Reply.Json(series));
+        var provider = new TheTvdbMetadataProvider(new TheTvdbClient(new HttpClient(h), "k", new CaptureLogger()));
+        var m = await provider.GetByIdAsync("series:1");
+        Assert.Null(m.Rating);
+        Assert.Equal(2914575, m.ExtendedData!.Value.GetProperty("popularity").GetDouble());
+        Assert.False(m.ExtendedData.Value.TryGetProperty("ratings", out _));
+        foreach (var t in provider.GetSupportedMediaTypes())
+        {
+            Assert.DoesNotContain("rating", t.SupportedFields);
+            foreach (var (_, fields) in t.LevelFields ?? []) Assert.DoesNotContain("rating", fields);
+        }
+    }
 }
